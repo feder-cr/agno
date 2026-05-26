@@ -192,7 +192,7 @@ class ContextProvider(ABC):
 
     async def _aget_query_agent(self, run_context: RunContext | None) -> "Agent | None":
         """Async variant — override only if setup requires I/O (e.g. MCP)."""
-        return self._get_query_agent(run_context)
+        return await asyncio.to_thread(self._get_query_agent, run_context)
 
     def setup(self) -> None:
         """Sync setup. Use asetup() in async contexts."""
