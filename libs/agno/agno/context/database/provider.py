@@ -52,7 +52,15 @@ class DatabaseContextProvider(ContextProvider):
         write: bool = True,
         stream_sub_agent_events: bool = True,
     ) -> None:
-        super().__init__(id=id, name=name, mode=mode, model=model, read=read, write=write, stream_sub_agent_events=stream_sub_agent_events)
+        super().__init__(
+            id=id,
+            name=name,
+            mode=mode,
+            model=model,
+            read=read,
+            write=write,
+            stream_sub_agent_events=stream_sub_agent_events,
+        )
         self.sql_engine = sql_engine
         self.readonly_engine = readonly_engine
         self.schema = schema
@@ -119,10 +127,13 @@ class DatabaseContextProvider(ContextProvider):
     # Mode resolution
     # ------------------------------------------------------------------
 
-    def _default_tools(self, async_mode: bool = False) -> list:
-        return self._read_write_tools(async_mode=async_mode)
+    async def _aget_query_agent(self, run_context):
+        return self._ensure_read_agent()
 
-    def _all_tools(self, async_mode: bool = False) -> list:
+    def _default_tools(self) -> list:
+        return self._read_write_tools()
+
+    def _all_tools(self) -> list:
         # mode=tools returns only the readonly SQLTools. The read/write
         # split the default sub-agent mode provides doesn't flatten into a
         # single tool list cleanly, and silent write exposure is the wrong
@@ -134,9 +145,6 @@ class DatabaseContextProvider(ContextProvider):
     # ------------------------------------------------------------------
     # Sub-agents
     # ------------------------------------------------------------------
-
-    def _get_query_agent(self, run_context):
-        return self._ensure_read_agent()
 
     def _ensure_read_agent(self) -> Agent:
         if self._read_agent is None:

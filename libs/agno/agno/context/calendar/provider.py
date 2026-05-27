@@ -90,7 +90,15 @@ class GoogleCalendarContextProvider(ContextProvider):
         write: bool = False,
         stream_sub_agent_events: bool = True,
     ) -> None:
-        super().__init__(id=id, name=name, mode=mode, model=model, read=read, write=write, stream_sub_agent_events=stream_sub_agent_events)
+        super().__init__(
+            id=id,
+            name=name,
+            mode=mode,
+            model=model,
+            read=read,
+            write=write,
+            stream_sub_agent_events=stream_sub_agent_events,
+        )
 
         self._sa_path = service_account_path or getenv("GOOGLE_SERVICE_ACCOUNT_FILE")
         self._credentials_path = credentials_path
@@ -141,13 +149,13 @@ class GoogleCalendarContextProvider(ContextProvider):
             tools.append(self.update_tool_name)
         return f"`{self.name}`: {', '.join(f'`{t}`' for t in tools)} for calendar operations."
 
-    def _default_tools(self, async_mode: bool = False) -> list:
-        return self._read_write_tools(async_mode=async_mode)
-
-    def _get_query_agent(self, run_context):
+    async def _aget_query_agent(self, run_context):
         return self._ensure_read_agent()
 
-    def _all_tools(self, async_mode: bool = False) -> list:
+    def _default_tools(self) -> list:
+        return self._read_write_tools()
+
+    def _all_tools(self) -> list:
         return [self._ensure_read_toolkit()]
 
     def _ensure_read_toolkit(self) -> GoogleCalendarTools:

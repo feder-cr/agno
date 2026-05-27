@@ -34,9 +34,8 @@ class WebContextProvider(ContextProvider):
         instructions: str | None = None,
         mode: ContextMode = ContextMode.default,
         model: Model | None = None,
-        stream_sub_agent_events: bool = True,
     ) -> None:
-        super().__init__(id=id, name=name, mode=mode, model=model, stream_sub_agent_events=stream_sub_agent_events)
+        super().__init__(id=id, name=name, mode=mode, model=model)
         self.backend = backend
         self.instructions_text = instructions if instructions is not None else DEFAULT_WEB_INSTRUCTIONS
         self._agent: Agent | None = None
@@ -83,18 +82,15 @@ class WebContextProvider(ContextProvider):
     # gets a synthesized, cited answer back instead of orchestrating raw
     # search + fetch itself. mode=tools still surfaces the backend's
     # tools flat for callers that want to drive search directly.
-    def _default_tools(self, async_mode: bool = False) -> list:
-        return [self._build_query_tool(async_mode=async_mode)]
+    def _default_tools(self) -> list:
+        return [self._query_tool()]
 
-    def _all_tools(self, async_mode: bool = False) -> list:
+    def _all_tools(self) -> list:
         return self.backend.get_tools()
 
     # ------------------------------------------------------------------
     # Sub-agent — built lazily for agent mode and programmatic query()
     # ------------------------------------------------------------------
-
-    def _get_query_agent(self, run_context):
-        return self._ensure_agent()
 
     def _ensure_agent(self) -> Agent:
         if self._agent is None:

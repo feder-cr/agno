@@ -54,7 +54,15 @@ class WikiContextProvider(ContextProvider):
         web: ContextBackend | None = None,
         stream_sub_agent_events: bool = True,
     ) -> None:
-        super().__init__(id=id, name=name, mode=mode, model=model, read=read, write=write, stream_sub_agent_events=stream_sub_agent_events)
+        super().__init__(
+            id=id,
+            name=name,
+            mode=mode,
+            model=model,
+            read=read,
+            write=write,
+            stream_sub_agent_events=stream_sub_agent_events,
+        )
         self.backend: WikiBackend = backend
         # Optional web backend for ingestion. When set, the write
         # sub-agent gets the backend's tools (typically web_search +
@@ -181,10 +189,14 @@ class WikiContextProvider(ContextProvider):
     # Mode resolution
     # ------------------------------------------------------------------
 
-    def _default_tools(self, async_mode: bool = False) -> list:
-        return self._read_write_tools(async_mode=async_mode)
+    async def _aget_query_agent(self, run_context):
+        await self.asetup()
+        return self._ensure_read_agent()
 
-    def _all_tools(self, async_mode: bool = False) -> list:
+    def _default_tools(self) -> list:
+        return self._read_write_tools()
+
+    def _all_tools(self) -> list:
         # mode=tools is read-only on purpose. The default surface
         # already gives two distinct tools (query_<id> / update_<id>);
         # collapsing both into a flat Workspace tool list would expose
@@ -194,9 +206,6 @@ class WikiContextProvider(ContextProvider):
     # ------------------------------------------------------------------
     # Sub-agents
     # ------------------------------------------------------------------
-
-    def _get_query_agent(self, run_context):
-        return self._ensure_read_agent()
 
     def _ensure_read_agent(self) -> Agent:
         if self._read_agent is None:

@@ -56,7 +56,15 @@ class SlackContextProvider(ContextProvider):
         write: bool = True,
         stream_sub_agent_events: bool = True,
     ) -> None:
-        super().__init__(id=id, name=name, mode=mode, model=model, read=read, write=write, stream_sub_agent_events=stream_sub_agent_events)
+        super().__init__(
+            id=id,
+            name=name,
+            mode=mode,
+            model=model,
+            read=read,
+            write=write,
+            stream_sub_agent_events=stream_sub_agent_events,
+        )
         self.token = token or getenv("SLACK_BOT_TOKEN") or getenv("SLACK_TOKEN")
         if not self.token:
             raise ValueError("SlackContextProvider: SLACK_BOT_TOKEN (or SLACK_TOKEN) is required")
@@ -125,19 +133,22 @@ class SlackContextProvider(ContextProvider):
     # calling agent's prompt. Splitting reads/writes keeps each sub-agent
     # scope minimal. mode=tools surfaces raw read tools for direct use.
 
-    def _default_tools(self, async_mode: bool = False) -> list:
-        return self._read_write_tools(async_mode=async_mode)
+    async def _aget_query_agent(self, run_context):
+        return self._select_read_agent(run_context)
 
-    def _build_query_tool(self, async_mode: bool = False):
-        query_tool = super()._build_query_tool(async_mode=async_mode)
+    def _default_tools(self) -> list:
+        return self._read_write_tools()
+
+    def _query_tool(self):
+        query_tool = super()._query_tool()
         query_tool.description = (
             "Read Slack with a natural-language request. Use for channel history, workspace search, "
             "threads, and user or channel lookups."
         )
         return query_tool
 
-    def _build_update_tool(self, async_mode: bool = False):
-        update_tool = super()._build_update_tool(async_mode=async_mode)
+    def _update_tool(self):
+        update_tool = super()._update_tool()
         update_tool.description = (
             "Post a Slack message or thread reply with a natural-language instruction. Include the "
             "destination channel and the exact message to send. If the user asks to post, send, or "
@@ -146,7 +157,7 @@ class SlackContextProvider(ContextProvider):
         )
         return update_tool
 
-    def _all_tools(self, async_mode: bool = False) -> list:
+    def _all_tools(self) -> list:
         # mode=tools is static: the provider cannot know whether a future
         # tool call will carry Slack interface metadata. Expose the
         # bot-token-compatible read surface so terminal runs never see the
@@ -160,9 +171,6 @@ class SlackContextProvider(ContextProvider):
     @staticmethod
     def _has_action_token(run_context: RunContext | None) -> bool:
         return bool(run_context and run_context.metadata and run_context.metadata.get("action_token"))
-
-    def _get_query_agent(self, run_context):
-        return self._select_read_agent(run_context)
 
     def _select_read_agent(self, run_context: RunContext | None) -> Agent:
         if self._has_action_token(run_context):

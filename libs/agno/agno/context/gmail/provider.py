@@ -97,7 +97,15 @@ class GmailContextProvider(ContextProvider):
         write: bool = False,
         stream_sub_agent_events: bool = True,
     ) -> None:
-        super().__init__(id=id, name=name, mode=mode, model=model, read=read, write=write, stream_sub_agent_events=stream_sub_agent_events)
+        super().__init__(
+            id=id,
+            name=name,
+            mode=mode,
+            model=model,
+            read=read,
+            write=write,
+            stream_sub_agent_events=stream_sub_agent_events,
+        )
 
         # Resolve auth at init — fail fast if misconfigured
         self._sa_path = service_account_path or getenv("GOOGLE_SERVICE_ACCOUNT_FILE")
@@ -156,10 +164,13 @@ class GmailContextProvider(ContextProvider):
             tools.append(self.update_tool_name)
         return f"`{self.name}`: {', '.join(f'`{t}`' for t in tools)} for email operations."
 
-    def _default_tools(self, async_mode: bool = False) -> list:
-        return self._read_write_tools(async_mode=async_mode)
+    async def _aget_query_agent(self, run_context):
+        return self._ensure_read_agent()
 
-    def _all_tools(self, async_mode: bool = False) -> list:
+    def _default_tools(self) -> list:
+        return self._read_write_tools()
+
+    def _all_tools(self) -> list:
         return [self._ensure_read_toolkit()]
 
     def _ensure_read_toolkit(self) -> GmailTools:
@@ -171,9 +182,6 @@ class GmailContextProvider(ContextProvider):
         if self._write_toolkit is None:
             self._write_toolkit = self._build_write_toolkit()
         return self._write_toolkit
-
-    def _get_query_agent(self, run_context):
-        return self._ensure_read_agent()
 
     def _ensure_read_agent(self) -> Agent:
         if self._read_agent is None:

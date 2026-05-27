@@ -40,9 +40,8 @@ class WorkspaceContextProvider(ContextProvider):
         exclude_patterns: list[str] | None = None,
         max_file_lines: int = 100_000,
         max_file_length: int = 10_000_000,
-        stream_sub_agent_events: bool = True,
     ) -> None:
-        super().__init__(id=id, name=name, mode=mode, model=model, stream_sub_agent_events=stream_sub_agent_events)
+        super().__init__(id=id, name=name, mode=mode, model=model)
         self.root = Path(root).expanduser().resolve() if root is not None else Path.cwd().resolve()
         self.instructions_text = instructions if instructions is not None else DEFAULT_WORKSPACE_INSTRUCTIONS
         self.exclude_patterns = exclude_patterns if exclude_patterns is not None else list(DEFAULT_EXCLUDE_PATTERNS)
@@ -86,18 +85,15 @@ class WorkspaceContextProvider(ContextProvider):
     # Mode resolution
     # ------------------------------------------------------------------
 
-    def _default_tools(self, async_mode: bool = False) -> list:
-        return [self._build_query_tool(async_mode=async_mode)]
+    def _default_tools(self) -> list:
+        return [self._query_tool()]
 
-    def _all_tools(self, async_mode: bool = False) -> list:
+    def _all_tools(self) -> list:
         return [self._build_workspace_tools()]
 
     # ------------------------------------------------------------------
     # Sub-agent
     # ------------------------------------------------------------------
-
-    def _get_query_agent(self, run_context):
-        return self._ensure_agent()
 
     def _ensure_agent(self) -> Agent:
         if self._agent is None:

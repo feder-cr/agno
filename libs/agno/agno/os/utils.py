@@ -1624,20 +1624,11 @@ def format_team_tools(team_tools: List[Union[Function, dict]]):
 
 
 def format_tools(agent_tools: List[Union[Dict[str, Any], Toolkit, Function, Callable]]):
-    from agno.context.provider import ContextProvider
-
     formatted_tools: List[Dict] = []
     if agent_tools is not None:
         for tool in agent_tools:
             if isinstance(tool, dict):
                 formatted_tools.append(tool)
-            elif isinstance(tool, ContextProvider):
-                for func in tool.get_tools():
-                    if isinstance(func, Function):
-                        formatted_tools.append(func.to_dict())
-                    elif isinstance(func, Toolkit):
-                        for _, f in func.functions.items():
-                            formatted_tools.append(f.to_dict())
             elif isinstance(tool, Toolkit):
                 for _, f in tool.functions.items():
                     formatted_tools.append(f.to_dict())
