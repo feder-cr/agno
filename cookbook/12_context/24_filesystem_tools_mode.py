@@ -46,7 +46,7 @@ fs = FilesystemContextProvider(
 # ---------------------------------------------------------------------------
 agent = Agent(
     model=OpenAIResponses(id="gpt-5.4"),
-    tools=[fs],
+    tools=fs.get_tools(),
     instructions=fs.instructions(),
     markdown=True,
 )
